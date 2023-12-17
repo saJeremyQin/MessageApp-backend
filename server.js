@@ -5,6 +5,7 @@ const app = express();
 const port = 3000;
 
 const messages = ["Tangseng","Suwukong","Zhubajie","Shawujing"];
+const users = [];
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -16,15 +17,23 @@ app.get('/messages', (req, res) => {
     res.send(messages);
 })
 
-app.post('/messages', (req, res) => {
-    console.log(req.body);
-    let msg = req.body;
-    messages.push(msg.message);
-    // res.send({messages});
-    res.json(msg);
-    console.log(messages);
+app.get('/messages/:id', (req, res) => {
+    console.log(req.params.id);
+    res.send(messages[req.params.id]);
 })
 
+app.post('/messages', (req, res) => {
+    let msg = req.body;
+    messages.push(msg.message);
+    res.json(msg);
+})
+
+app.post('/register', (req, res) => {
+    const registerData = req.body;
+    users.push(registerData);
+    console.log(users);
+    res.send(users);
+})
 app.listen(port, () => {
     console.log(`App is runing at port ${port}`);
 })
