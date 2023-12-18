@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken');
+
+require('dotenv').config();
 const app = express();
 const port = 3000;
 
@@ -23,7 +26,9 @@ app.get('/messages/:id', (req, res) => {
 })
 
 app.post('/messages', (req, res) => {
-    const userId = req.header('Authorization');
+    const token = req.header('Authorization');
+    const userId = jwt.decode(token, process.env.JWT_SECRET );
+
     const user = users[userId];
     let msg = {
         user: user.username,
@@ -37,9 +42,12 @@ app.post('/messages', (req, res) => {
 app.post('/register', (req, res) => {
     const registerData = req.body;
     users.push(registerData);
-    console.log(users);
-    registerData.id = users.length - 1;
-    res.send(registerData);
+    const userId = users.length - 1;
+
+    let token;
+    token = jwt.sign(userId, process.env.JWT_SECRET);
+    console.log(token);
+    res.send(token);
 })
 app.listen(port, () => {
     console.log(`App is runing at port ${port}`);
