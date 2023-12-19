@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 require('dotenv').config();
 const app = express();
@@ -40,30 +41,48 @@ app.post('/messages', (req, res) => {
     res.json(msg);
 })
 
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
     const registerData = req.body;
-    users.push(registerData);
-    console.log(users);
+
+    // hash the code, then push it to array
+    const hashed = await bcrypt.hash(registerData.password, 10);
+    const user = {
+        username:registerData.username,
+        password:hashed
+    };
+    console.log(user);
+    users.push(user);
     const userId = users.length - 1;
 
     let token;
     token = jwt.sign(userId, process.env.JWT_SECRET);
-    // console.log(token);
     res.send(token);
 })
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     const loginData = req.body;
-    // if no user is found, throw an authentication error
-    let userId = users.findIndex(user => user.username == loginData.username)
-    if(userId == -1) {
-        throw Error('Invalid username or password!');
+    
+    try {
+        // if no user is found, throw an authentication error
+        let userId = users.findIndex(user => user.username === loginData.username)
+        if(userId === -1) {
+            throw Error('Invalid username or password!');
+        }
+        const user = users[userId];
+    
+        // if the passwords don't match, throw an authentication error
+        const valid = await bcrypt.compare(loginData.password, user.password);
+        console.log(valid);
+        if(!valid) {
+            throw Error('Invalid username or password!');
+        }
+
+        let token;
+        token = jwt.sign(userId, process.env.JWT_SECRET);
+        res.send(token);          
+    } catch (error) {
+        res.status(401).send('Invalid username or password');
     }
-
-    // if the passwords don't match, throw an authentication error
-
-    // create and return the json web token
-    res.send('ok');
 })
 app.listen(port, () => {
     console.log(`App is runing at port ${port}`);
